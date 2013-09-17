@@ -3,11 +3,13 @@ Created on Sep 16, 2013
 
 @author: sungoh
 '''
-import tweepy
+import tweepy, os
 
-auth = tweepy.auth.OAuthHandler('lnRooNIFnJdWBz8LQnMbOQ', '69aFhthvjtxlLpZQ3sJ8tt8cQZ3nFZ3I7a0qCVI')
-auth.set_access_token('635070399-LJfZWHLeNYD9h55REcNyqFXl9JOW8Wp27bbBaHre', 'nXcJAMcTObvo5ziPkjTuxjHE9oBRDDC1AF8V9ERc')
+#Stored keys/secrets as environment variables
+auth = tweepy.auth.OAuthHandler(os.environ.get('CONSUMERTOKEN'), os.environ.get('CONSUMERSECRET'))
+auth.set_access_token(os.environ.get('ACCESSTOKEN'), os.environ.get('ACCESSSECRET'))
 api = tweepy.API(auth)
+
 
 if api.verify_credentials() is not False:
     print 'good'
