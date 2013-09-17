@@ -6,7 +6,8 @@ local_settings.py
 django-countries
 *.gif
 *.db
-
+.project
+.pydevproject
 # C extensions
 *.so
 
