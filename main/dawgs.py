@@ -11,18 +11,19 @@ api = tweepy.API(auth)
 
 if api.verify_credentials() is not False:
     print 'good'
-    #return api
 else:
     print 'Invalid Authentication'
-    #return None
-    
+ 
 print api.get_user(screen_name = 'NancyPelosi').__getstate__()
 
 barack = api.get_user(screen_name = 'BarackObama').__getstate__()
 
 print barack['screen_name']
 
+#All the members of the congress that have twitter accounts according to this list-- https://twitter.com/cspan/lists/members-of-congress
 dawgs = []
 for member in tweepy.Cursor(api.list_members, 'CSPAN', 'members-of-congress').items():
     dawgs.append(member.__getstate__()['screen_name'])
 print dawgs
+
+print 'This many dawgs have twitta: ' + str(len(dawgs))
