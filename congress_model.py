@@ -60,10 +60,12 @@ class CongressMember(Base):
     chamber = Column(String(3))
     #Thomas ID for a legislator
     thomas_id = Column(String)
+    #Twitter User ID
     twitter_id = Column(String(20))
     party = Column(String(1))
     last_updated = Column(DateTime, default=datetime.datetime.now())
-    
+    tweets = relationship("Tweets")
+
     
 class Tweets(Base):
     '''
@@ -71,12 +73,11 @@ class Tweets(Base):
     One to many relationship between CongressMembers and this table.
     '''
     __tablename__ = 'tweets'
-    id = Column(Integer, primary_key=True)
+    tweet_id = Column(Integer, primary_key=True)
     congress_member = Column(Integer, ForeignKey('congress_members.id'))
-    member = relationship("CongressMember", backref=backref('tweets', order_by=id))
 
     
-    tweet_id = Column(Integer, primary_key=True)
+    
     tweet_body = Column(Text(140))
     tweet_date = Column(Date)
     tweet_time = Column(Time)
@@ -95,7 +96,7 @@ class Tweets(Base):
     
     
 #update_members()
-#Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
 
 member = CongressMember(first_name='Nancy', last_name='Pelosi', twitter_id='NancyPelosi')
 session.add(member)
