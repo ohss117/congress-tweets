@@ -4,9 +4,9 @@ Created on Sep 16, 2013
 @author: sungoh
 '''
 import tweepy
-from auth import ApiAuthorize
+from auth import TwitterApiAuthorize
 
-api = ApiAuthorize.api
+api = TwitterApiAuthorize.api
     
 #Testing API        
 if api.verify_credentials() is not False:
@@ -14,12 +14,14 @@ if api.verify_credentials() is not False:
 else:
     print 'Invalid Authentication'
  
-print api.get_user(screen_name = 'NancyPelosi').__getstate__()
+nancy = api.get_user(screen_name = 'NancyPelosi').__getstate__()
 
 barack = api.get_user(screen_name = 'BarackObama').__getstate__()
 
-print barack['screen_name']
-    
+print barack['name']
+print nancy['name']
+   
+''' 
 #All the members of the congress that have twitter accounts according to this list-- https://twitter.com/cspan/lists/members-of-congress
 dawgs = []
 for member in tweepy.Cursor(api.list_members, 'CSPAN', 'members-of-congress').items():
@@ -27,3 +29,4 @@ for member in tweepy.Cursor(api.list_members, 'CSPAN', 'members-of-congress').it
 print dawgs
 
 print 'This many dawgs have twitta: ' + str(len(dawgs))
+'''

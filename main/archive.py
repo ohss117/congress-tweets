@@ -3,20 +3,14 @@ Created on Sep 25, 2013
 
 @author: sungoh
 Credit for major help goes to Tim Bueno - www.timbueno.com
-
-Quickly archive your tweets to a plain text file.
-Attach this script to a cron task and automatically
-archive your tweets at any interval you choose!
-
 '''
 
 import codecs
 import os
 import pytz
-from auth import ApiAuthorize
+from auth import TwitterApiAuthorize
 
 
-# USER INFO GATHERED FROM COMMAND LINE
 theUserName = 'NancyPelosi'
 archiveFile = 'NancyPelosi.txt'
 homeTZ = 'America/New_York'
@@ -30,7 +24,7 @@ idFile = os.path.join(working_dir, idFile) # join dir and filename
 utc = pytz.utc
 
 #Create Twitter API object from the ApiAuthorize wrapper
-api = ApiAuthorize.api
+api = TwitterApiAuthorize.api
 
 # helpful variables
 status_list = [] # Create empty list to hold statuses
