@@ -5,7 +5,7 @@ Created on Sep 25, 2013
 '''
 import tweepy, os
 
-class TwitterApiAuthorize():
+class TwitterApiAuthorize(object):
     '''
     Container for Twitter API authentication
     '''
@@ -14,7 +14,7 @@ class TwitterApiAuthorize():
     api = tweepy.API(auth)
 
 
-class SunlightApiAuthorize():
+class SunlightApiAuthorize(object):
     '''
     Container for Sunlight Foundation API authentication.
     Use this class if you do not have the .sunlight.key file in your home directory.

@@ -9,10 +9,28 @@ import codecs
 import os
 import pytz
 from auth import TwitterApiAuthorize
+from sunlight import congress
 
-
-theUserName = 'NancyPelosi'
-archiveFile = 'NancyPelosi.txt'
+def update_members():
+    '''
+    This method fetches a list of congress members from Sunlight Foundation API 
+    then populates the database with the retrieved information.
+    '''
+    members = congress.legislators()
+    senate = []
+    house = []
+    for x in range(len(members)):
+        if members[x]['title'] == 'Sen':
+            senate.append(members[x])
+        elif members[x]['title'] == 'Rep':
+            house.append(members[x])
+    print members[1]['title']
+    print senate[0]
+    print len(senate)
+    print len(house)
+    
+theUserName = 'RepDennisRoss'
+archiveFile = 'RepDennisRoss.txt'
 homeTZ = 'America/New_York'
 homeTZ = pytz.timezone(homeTZ)
 

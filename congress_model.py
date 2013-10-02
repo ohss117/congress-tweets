@@ -3,14 +3,14 @@ Created on Sep 26, 2013
 
 @author: sungoh
 
-Constructs an in-memory database of all the congress members and their tweets.
+Constructs a database of all the congress members and their tweets.
 Pulls the list of congressmembers from the Sunlight Foundation's API.
 
 '''
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, backref, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, create_engine
-from sqlalchemy import Date, Time, DateTime, Sequence
+from sqlalchemy import Date, Time, DateTime
 from sunlight import congress
 
 import datetime
@@ -25,30 +25,14 @@ Base = declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
 
-def update_members():
-    '''
-    This method fetches a list of congress members from Sunlight Foundation API 
-    then populates the database with the retrieved information.
-    '''
-    members = congress.legislators()
-    senate = []
-    house = []
-    for x in range(len(members)):
-        if members[x]['title'] == 'Sen':
-            senate.append(members[x])
-        elif members[x]['title'] == 'Rep':
-            house.append(members[x])
-    print members[1]['title']
-    print senate[0]
-    print len(senate)
-    print len(house)
+
 
 class CongressMember(Base):
     '''
     Database table of all US Congress Members.
     '''
-    __tablename__ = 'congress_members'
-    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    __tablename__ = 'congressmember'
+    id = Column(Integer, primary_key=True)
     
     first_name = Column(String(35))
     middle_name = Column(String(35))
@@ -56,15 +40,15 @@ class CongressMember(Base):
     gender = Column(String(1))
     birthday = Column(Date)
     
+    thomas_id = Column(Integer(15))
+    
     #Sen or Rep
     chamber = Column(String(3))
-    #Thomas ID for a legislator
-    thomas_id = Column(String)
     #Twitter User ID
     twitter_id = Column(String(20))
     party = Column(String(1))
     last_updated = Column(DateTime, default=datetime.datetime.now())
-    tweets = relationship("Tweets")
+    tweets_made = relationship('Tweets', backref='congressmember')
 
     
 class Tweets(Base):
@@ -74,7 +58,7 @@ class Tweets(Base):
     '''
     __tablename__ = 'tweets'
     tweet_id = Column(Integer, primary_key=True)
-    congress_member = Column(Integer, ForeignKey('congress_members.id'))
+    congress_member = Column(Integer, ForeignKey('congressmember.id'))
 
     
     
@@ -82,8 +66,10 @@ class Tweets(Base):
     tweet_date = Column(Date)
     tweet_time = Column(Time)
     tweet_url = Column(String)
+    test_column = Column(String)
     
-    def __init__(self, tweet_author, tweet_body, tweet_date, tweet_time, tweet_url):
+    def __init__(self, tweet_id, tweet_author, tweet_body, tweet_date, tweet_time, tweet_url):
+        self.tweet_id = tweet_id
         self.tweet_author = tweet_author
         self.tweet_body = tweet_body
         self.tweet_date = tweet_date
@@ -91,13 +77,20 @@ class Tweets(Base):
         self.tweet_url = tweet_url
     
     def __repr__(self):
-        return "Author: %s , Tweet: %s , Tweet time: %s at %s , URL: %s" % \
+        return "<ID: %s> , <Author: %s> , <Tweet: %s> , <Tweet time: %s at %s >, <URL: %s>" % \
                 (self.tweet_author, self.tweet_body, self.tweet_date, self.tweet_time, self.tweet_url)
-    
-    
+'''
+class Test(Base):
+    __tablename__ = 'test_table'
+    id = Column(Integer, primary_key=True)
+    my_column = Column(String)
+    my_derp = Column(Integer)
+    my_herp = Column(String)
+'''
 #update_members()
-Base.metadata.create_all(engine)
-
+#Base.metadata.create_all(engine)
+'''
 member = CongressMember(first_name='Nancy', last_name='Pelosi', twitter_id='NancyPelosi')
 session.add(member)
 session.commit()
+'''
