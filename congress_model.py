@@ -8,89 +8,75 @@ Pulls the list of congressmembers from the Sunlight Foundation's API.
 
 '''
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, create_engine
-from sqlalchemy import Date, Time, DateTime
-from sunlight import congress
-
+from sqlalchemy import Date, DateTime
 import datetime
 import os
 
 working_dir = os.path.dirname(__file__)
-database_name = 'test.db'
-database_dir = 'sqlite:///'+os.path.join(working_dir, database_name)
+db_name = 'arf.db'
+database_dir = 'sqlite:///'+os.path.join(working_dir, db_name)
+
 engine = create_engine(database_dir, echo=True)
 Base = declarative_base()
 
-Session = sessionmaker(bind=engine)
-session = Session()
-
-
 
 class CongressMember(Base):
-    '''
-    Database table of all US Congress Members.
-    '''
+    """
+    Database table of all US Congress Members, both Senate and House.
+    """
     __tablename__ = 'congressmember'
-    id = Column(Integer, primary_key=True)
+    bioguide_id = Column(String(20), primary_key=True)
     
-    first_name = Column(String(35))
-    middle_name = Column(String(35))
-    last_name = Column(String(35))
+    first_name = Column(String(50))
+    middle_name = Column(String(50))
+    last_name = Column(String(50))
     gender = Column(String(1))
     birthday = Column(Date)
-    
-    thomas_id = Column(Integer(15))
-    
     #Sen or Rep
-    chamber = Column(String(3))
+    chamber = Column(String(6))
     #Twitter User ID
-    twitter_id = Column(String(20))
+    twitter_id = Column(String(35))
     party = Column(String(1))
     last_updated = Column(DateTime, default=datetime.datetime.now())
-    tweets_made = relationship('Tweets', backref='congressmember')
-
     
+    def __init__(self, first_name, middle_name, last_name, gender, birthday, 
+                 bioguide_id, chamber, twitter_id, party):
+        self.bioguide_id = bioguide_id
+        self.first_name = first_name
+        self.middle_name = middle_name
+        self.last_name = last_name
+        self.gender = gender
+        self.birthday = birthday
+        self.chamber = chamber
+        self.twitter_id = twitter_id
+        self.party = party
+        
+    
+
 class Tweets(Base):
-    '''
+    """
     Database table of Tweets made by congress members.
     One to many relationship between CongressMembers and this table.
-    '''
+    """
     __tablename__ = 'tweets'
-    tweet_id = Column(Integer, primary_key=True)
-    congress_member = Column(Integer, ForeignKey('congressmember.id'))
-
-    
-    
+    id = Column(Integer, primary_key=True)
+    tweet_id = Column(Integer)
+    congress_member = Column(Integer, ForeignKey('congressmember.bioguide_id'))
     tweet_body = Column(Text(140))
-    tweet_date = Column(Date)
-    tweet_time = Column(Time)
+    tweet_datetime = Column(DateTime)
     tweet_url = Column(String)
-    test_column = Column(String)
     
-    def __init__(self, tweet_id, tweet_author, tweet_body, tweet_date, tweet_time, tweet_url):
+    def __init__(self, tweet_id, tweet_author, tweet_body, tweet_datetime, tweet_url):
         self.tweet_id = tweet_id
-        self.tweet_author = tweet_author
+        self.congress_member = tweet_author
         self.tweet_body = tweet_body
-        self.tweet_date = tweet_date
-        self.tweet_time = tweet_time
+        self.tweet_datetime = tweet_datetime
         self.tweet_url = tweet_url
     
     def __repr__(self):
         return "<ID: %s> , <Author: %s> , <Tweet: %s> , <Tweet time: %s at %s >, <URL: %s>" % \
                 (self.tweet_author, self.tweet_body, self.tweet_date, self.tweet_time, self.tweet_url)
-'''
-class Test(Base):
-    __tablename__ = 'test_table'
-    id = Column(Integer, primary_key=True)
-    my_column = Column(String)
-    my_derp = Column(Integer)
-    my_herp = Column(String)
-'''
-#update_members()
-#Base.metadata.create_all(engine)
-'''
-member = CongressMember(first_name='Nancy', last_name='Pelosi', twitter_id='NancyPelosi')
-session.add(member)
-session.commit()
-'''
+#Creates the database
+Base.metadata.create_all(engine)
+
