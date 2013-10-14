@@ -10,21 +10,30 @@ from sqlalchemy.orm import sessionmaker
 from congress_model import CongressMember, Tweets
 from datetime import datetime
 from auth import TwitterApiAuthorize
+from abc import ABCMeta, abstractmethod  
 import pytz
 
-class LoadDatabase(object):
+class LoadDatabase:
     """
-    Sets up database engine and session. Should be inherited. TODO: Abstract Base Class?
-    Not sure at the moment what the best way to organize my code would be. :-(
+    Sets up database engine and session. Should be inherited.
     Create your own 'insert' method for adding tweets or congressmember, etc.
+    Not sure at the moment what the best way to organize my code would be. :-(
     """
+    __metaclass__ = ABCMeta
 
     def __init__(self, database_dir):
         self.database_dir = database_dir
         self.engine = sa.create_engine(self.database_dir, echo=False)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
-
+    
+    @abstractmethod
+    def insert(self):
+        """
+        Do something here to insert data into database.
+        """
+        
+        
 class LoadCongress(LoadDatabase):
     """
     Inserts Congress members from Sunlight API to the database.
@@ -32,14 +41,45 @@ class LoadCongress(LoadDatabase):
     """
     
     def insert(self, members):
-        for element in range(len(members)):
-            cursor = members[element]
-            sanitized_member = CongressMember(cursor['firstname'], cursor['middlename'], cursor['lastname'],
-                                              cursor['gender'], datetime.strptime(cursor['birthdate'], '%Y-%m-%d').date(), cursor['bioguide_id'],
-                                              cursor['chamber'], cursor['twitter_id'], cursor['party'] )
-            self.session.add(sanitized_member)
+        #TODO: Implement insert/update logic.
+        #I want this method to remove departing members, update existing members or add new members.
+        members_in_db = self.session.query(CongressMember.bioguide_id)
+        #List of bioguide id numbers for the members of Congress in the database
+        db_bioguide_list = []
+        for member_id in members_in_db:
+            db_bioguide_list.append(member_id[0])
+        
+        def add_members_to_db(cur):
+            """
+            Closure method to add elements to db.
+            """
+            sanitized_member = CongressMember(cur['firstname'], cur['middlename'], cur['lastname'],
+                                              cur['gender'], datetime.strptime(cur['birthdate'], '%Y-%m-%d').date(), cur['bioguide_id'],
+                                              cur['chamber'], cur['twitter_id'], cur['party'] )
+            self.session.merge(sanitized_member)
+        
+        #If the database is already populated, do the following block
+        if len(db_bioguide_list) != 0:
+            for element in range(len(members)):
+                cursor = members[element]
+                #Get the bioguide ID of congress members obtained from Sunlight foundation.
+                #Check 'sunlight_bioguide' against 'check_bioguide' list to remove those voted out of office
+                sunlight_bioguide = cursor['bioguide_id']
+                if sunlight_bioguide in db_bioguide_list:
+                    add_members_to_db(cursor)
+                    print 'Woof'
+                elif sunlight_bioguide not in db_bioguide_list:
+                    #Uhoh, this dawg is out of the dawghouse!!!
+                    self.session.query(CongressMember).filter(CongressMember.bioguide_id == sunlight_bioguide).delete()
+        #If the database is empty, add everything from Sunlight API
+        else:
+            for element in range(len(members)):
+                cursor = members[element]
+                add_members_to_db(cursor)
         self.session.commit()
         print 'Insertion complete'
+        print len(db_bioguide_list)
+
         
 class LoadTweets(LoadDatabase):
     """
