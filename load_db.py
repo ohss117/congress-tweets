@@ -12,12 +12,12 @@ from datetime import datetime
 from auth import TwitterApiAuthorize
 from abc import ABCMeta, abstractmethod  
 import pytz
+import time
 
 class LoadDatabase:
     """
     Sets up database engine and session. Should be inherited.
     Create your own 'insert' method for adding tweets or congressmember, etc.
-    Not sure at the moment what the best way to organize my code would be. :-(
     """
     __metaclass__ = ABCMeta
 
@@ -28,58 +28,53 @@ class LoadDatabase:
         self.session = self.Session()
     
     @abstractmethod
-    def insert(self):
+    def insert_and_update(self):
         """
-        Do something here to insert data into database.
+        Do something here to insert and update Congress members or Tweets into database.
         """
         
         
 class LoadCongress(LoadDatabase):
     """
-    Inserts Congress members from Sunlight API to the database.
+    Inserts and updates Congress members from Sunlight API to the database.
     Inherits LoadDatabase
     """
     
-    def insert(self, members):
-        #TODO: Implement insert/update logic.
-        #I want this method to remove departing members, update existing members or add new members.
+    def insert_and_update(self, members):
+        #Query the database for bioguide ID in order to remove departing members.
+        #Primary key for the CongressMember table is 'bioguide_id'
         members_in_db = self.session.query(CongressMember.bioguide_id)
         #List of bioguide id numbers for the members of Congress in the database
-        db_bioguide_list = []
-        for member_id in members_in_db:
-            db_bioguide_list.append(member_id[0])
+        db_bioguide_list = [member_id[0] for member_id in members_in_db]
+        #A list of bioguide IDs directly from the Sunlight foundation API
+        sunlight_bioguide_list = [sun_member['bioguide_id'] for sun_member in members]
         
+        #For each element in 'db_bioguide_list', check to see if it's in the 'sunlight_bioguide_list'
+        #If an element of 'db_bioguide' is not in 'sunlight_bioguide', append to 'voted_out' list
+        #uh oh, these dawgs are out of the dawghouse!!!
+        for congress_member_id in db_bioguide_list:
+            if congress_member_id not in sunlight_bioguide_list:
+                #delete voted out members
+                print 'Deleting {}'.format(congress_member_id)
+                self.session.query(CongressMember).filter(CongressMember.bioguide_id == congress_member_id).delete()
+            
         def add_members_to_db(cur):
             """
-            Closure method to add elements to db.
+            Closure method to add elements to the current database.
             """
             sanitized_member = CongressMember(cur['firstname'], cur['middlename'], cur['lastname'],
                                               cur['gender'], datetime.strptime(cur['birthdate'], '%Y-%m-%d').date(), cur['bioguide_id'],
                                               cur['chamber'], cur['twitter_id'], cur['party'] )
             self.session.merge(sanitized_member)
         
-        #If the database is already populated, do the following block
-        if len(db_bioguide_list) != 0:
-            for element in range(len(members)):
-                cursor = members[element]
-                #Get the bioguide ID of congress members obtained from Sunlight foundation.
-                #Check 'sunlight_bioguide' against 'check_bioguide' list to remove those voted out of office
-                sunlight_bioguide = cursor['bioguide_id']
-                if sunlight_bioguide in db_bioguide_list:
-                    add_members_to_db(cursor)
-                    print 'Woof'
-                elif sunlight_bioguide not in db_bioguide_list:
-                    #Uhoh, this dawg is out of the dawghouse!!!
-                    self.session.query(CongressMember).filter(CongressMember.bioguide_id == sunlight_bioguide).delete()
-        #If the database is empty, add everything from Sunlight API
-        else:
-            for element in range(len(members)):
-                cursor = members[element]
-                add_members_to_db(cursor)
+
+        for element in range(len(members)):
+            print 'Updating database'
+            cursor = members[element]
+            add_members_to_db(cursor)
+        #Commit everything to the database.
         self.session.commit()
         print 'Insertion complete'
-        print len(db_bioguide_list)
-
         
 class LoadTweets(LoadDatabase):
     """
@@ -87,9 +82,9 @@ class LoadTweets(LoadDatabase):
     Inherits LoadDatabase.
     """
     
-    def insert(self, username):
+    def insert_and_update(self, username):
         utc = pytz.utc
-        homeTZ = 'America/New_York'
+        homeTZ = 'America/Chicago'
         homeTZ = pytz.timezone(homeTZ)
         self.api = TwitterApiAuthorize.api
         self.status_list = []
@@ -100,9 +95,13 @@ class LoadTweets(LoadDatabase):
         except:
             last_tweet = None
         #Default latest_tweet_id at the time of database creation is set to 0
-        if last_tweet != 0 and self.status_list != []:
+        if last_tweet != 0 and last_tweet != None:
+            print 'First if statement'
             #Get Tweets made by the user since the last archive
             statuses = self.api.user_timeline(count=200, include_rts=True, since_id=last_tweet, screen_name=username)
+            #Pause gathering data for 11 seconds to prevent Twitter from hating you
+            print 'Waiting 11 seconds...'
+            time.sleep(11)
             if statuses != []:
                 theUser = statuses[0].author
                 total_status_count = theUser.statuses_count
@@ -115,11 +114,15 @@ class LoadTweets(LoadDatabase):
                 theMaxId = theMaxId - 1
                 # Get next page of unarchived statuses
                 statuses = self.api.user_timeline(count=200, include_rts=True, since_id=last_tweet, max_id=theMaxId, screen_name=username)
-        elif self.status_list == [] and last_tweet is not None:
-            print 'No new tweets'
+                #Pause
+                print 'Waiting 11 seconds...'
+                time.sleep(11)
         #When no Tweets have been archived       
         elif last_tweet == None:
             statuses = self.api.user_timeline(count=200, include_rts=True, screen_name=username)
+            #Pause
+            print 'Waiting 11 seconds...'
+            time.sleep(11)
             theUser = statuses[0].author
             total_status_count = theUser.statuses_count
             while statuses != []:
@@ -134,6 +137,7 @@ class LoadTweets(LoadDatabase):
                 # Get new page of statuses based on current id location
                 statuses = self.api.user_timeline(count=200, include_rts=True, max_id=theMaxId, screen_name=username)
                 print "%d of %d tweets processed..." % (self.cur_status_count, total_status_count)
+                time.sleep(11)
         #Add mined results to the database
         if self.status_list != []:
             for status in reversed(self.status_list):
@@ -143,3 +147,12 @@ class LoadTweets(LoadDatabase):
                 self.session.add(cleaned_status)
             self.session.commit()
             print 'Insertion Complete'
+        elif self.status_list == [] and last_tweet is not None:
+            print 'No new tweets'
+            
+        rate_limit_json = self.api.rate_limit_status()
+        #twitter_user_timeline =  rate_limit_json['/statuses/user_timeline']
+        #remaining = twitter_user_timeline['remaining']
+        #limit = twitter_user_timeline['limit']
+        #print '{} calls remaining out of {}'.format(remaining, limit)
+        print self.api.rate_limit_status()['remaining_hits']

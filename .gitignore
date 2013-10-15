@@ -10,6 +10,9 @@ django-countries
 .pydevproject
 # C extensions
 *.so
+sunlight_errata.txt
+*.csv
+*.pdf
 
 # Packages
 *.egg
