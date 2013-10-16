@@ -90,12 +90,12 @@ class LoadTweets(LoadDatabase):
         self.status_list = []
         self.cur_status_count = 0
         #get the id of last tweet made by this user
-        try:
-            last_tweet = self.session.query(Tweets.tweet_id).filter(Tweets.congress_member == username).order_by(Tweets.tweet_id.desc()).first()[0]
-        except:
-            last_tweet = None
+        last_tweet = self.session.query(Tweets.tweet_id).filter(Tweets.congress_member == username).order_by(Tweets.tweet_id.desc()).first()[0]
+        #last_tweet will be none if the db hasn't been initialized...
+        #TODO:I might have goofed up here.
+        
         #Default latest_tweet_id at the time of database creation is set to 0
-        if last_tweet != 0 and last_tweet != None:
+        if last_tweet != 0:
             print 'First if statement'
             #Get Tweets made by the user since the last archive
             statuses = self.api.user_timeline(count=200, include_rts=True, since_id=last_tweet, screen_name=username)
@@ -118,7 +118,7 @@ class LoadTweets(LoadDatabase):
                 print 'Waiting 11 seconds...'
                 time.sleep(11)
         #When no Tweets have been archived       
-        elif last_tweet == None:
+        elif last_tweet == 0:
             statuses = self.api.user_timeline(count=200, include_rts=True, screen_name=username)
             #Pause
             print 'Waiting 11 seconds...'
@@ -150,9 +150,9 @@ class LoadTweets(LoadDatabase):
         elif self.status_list == [] and last_tweet is not None:
             print 'No new tweets'
             
-        rate_limit_json = self.api.rate_limit_status()
+        rate_limit = self.api.rate_limit_status()
         #twitter_user_timeline =  rate_limit_json['/statuses/user_timeline']
         #remaining = twitter_user_timeline['remaining']
         #limit = twitter_user_timeline['limit']
         #print '{} calls remaining out of {}'.format(remaining, limit)
-        print self.api.rate_limit_status()['remaining_hits']
+        print rate_limit['resources']['statuses']['/statuses/user_timeline']

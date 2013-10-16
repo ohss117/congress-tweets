@@ -61,7 +61,7 @@ class Tweets(Base):
     """
     __tablename__ = 'tweets'
     id = Column(Integer, primary_key=True)
-    tweet_id = Column(Integer)
+    tweet_id = Column(Integer, default=0)
     congress_member = Column(Integer, ForeignKey('congressmember.bioguide_id'))
     tweet_body = Column(Text(140))
     tweet_datetime = Column(DateTime)

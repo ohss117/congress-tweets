@@ -1,6 +1,7 @@
 An attempt at sentiment analysis using Python libraries and Congress members' tweets.
 
 My efforts at building a robotic girlfriend led me to a growing interest in machine learning and text analysis.
+But seriously, this project is mainly for myself to learn SQLAlchemy and Tweepy API.
 
 NLTK- Natural Language Tool Kit: http://nltk.org/
 

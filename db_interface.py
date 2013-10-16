@@ -16,4 +16,4 @@ database_dir = 'sqlite:///'+os.path.join(working_dir, db_name)
 #members.insert_and_update(congress.legislators())
 db = load_db.LoadTweets(database_dir)
 
-db.insert_and_update('NancyPelosi')
+db.insert_and_update('billclinton')
