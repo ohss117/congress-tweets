@@ -14,7 +14,7 @@ import datetime
 import os
 
 working_dir = os.path.dirname(__file__)
-db_name = 'arf.db'
+db_name = 'congress_tweets.db'
 database_dir = 'sqlite:///'+os.path.join(working_dir, db_name)
 
 engine = create_engine(database_dir, echo=True)
@@ -33,24 +33,28 @@ class CongressMember(Base):
     last_name = Column(String(50))
     gender = Column(String(1))
     birthday = Column(Date)
+    state = Column(String(2))
     #Sen or Rep
     chamber = Column(String(6))
     #Twitter User ID
     twitter_id = Column(String(35))
     party = Column(String(1))
     last_updated = Column(DateTime, default=datetime.datetime.now())
+    title = Column(String(10))
     
-    def __init__(self, first_name, middle_name, last_name, gender, birthday, 
-                 bioguide_id, chamber, twitter_id, party):
+    def __init__(self, first_name, middle_name, last_name, state, gender, birthday, 
+                 bioguide_id, chamber, twitter_id, party, title):
         self.bioguide_id = bioguide_id
         self.first_name = first_name
         self.middle_name = middle_name
         self.last_name = last_name
+        self.state = state
         self.gender = gender
         self.birthday = birthday
         self.chamber = chamber
         self.twitter_id = twitter_id
         self.party = party
+        self.title = title
         
     
 
@@ -61,8 +65,8 @@ class Tweets(Base):
     """
     __tablename__ = 'tweets'
     id = Column(Integer, primary_key=True)
-    tweet_id = Column(Integer, default=0)
-    congress_member = Column(Integer, ForeignKey('congressmember.bioguide_id'))
+    tweet_id = Column(String)
+    congress_member = Column(String(20), ForeignKey('congressmember.bioguide_id'))
     tweet_body = Column(Text(140))
     tweet_datetime = Column(DateTime)
     tweet_url = Column(String)
