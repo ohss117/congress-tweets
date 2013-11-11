@@ -11,11 +11,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, create_engine
 from sqlalchemy import Date, DateTime
 import datetime
-import os
+import db_interface
 
-working_dir = os.path.dirname(__file__)
-db_name = 'congress_tweets.db'
-database_dir = 'sqlite:///'+os.path.join(working_dir, db_name)
+
+database_dir = db_interface.database_dir
 
 engine = create_engine(database_dir, echo=True)
 Base = declarative_base()
